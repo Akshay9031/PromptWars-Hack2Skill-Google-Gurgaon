@@ -31,28 +31,25 @@ def generate_itinerary():
     try:
         data = request.json
         
-        # --- ROBUST VALIDATION (Edge Cases) ---
+        # --- ROBUST VALIDATION & DEFAULTS ---
         dest = sanitize_input(data.get('destination'))
         if not dest or len(dest) < 2:
-            # Fallback for natural language only queries
-            dest = "Your Bespoke Destination"
+            dest = \"the location described\" # Let AI infer from description
 
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
+        start_date = data.get('start_date') or datetime.now().strftime('%Y-%m-%d')
+        end_date = data.get('end_date') or (datetime.now().replace(day=datetime.now().day + 4)).strftime('%Y-%m-%d')
         
         try:
             d1 = datetime.strptime(start_date, '%Y-%m-%d')
             d2 = datetime.strptime(end_date, '%Y-%m-%d')
             if d2 < d1:
-                return {"error": "End date cannot be before start date."}, 400
+                return {\"error\": \"End date cannot be before start date.\"}, 400
+            days = (d2 - d1).days + 1
         except:
-            # Defaults for natural language only
-            start_date = datetime.now().strftime('%Y-%m-%d')
-            end_date = (datetime.now()).strftime('%Y-%m-%d')
+            days = 4 # Default fallback
 
         # --- DATA CLEANING ---
         origin = sanitize_input(data.get('home_country', 'New Delhi, India'))
-        days = int(data.get('duration', 1))
         travelers = sanitize_input(data.get('group_type', '2'))
         budget = data.get('budget', 'Mid-Range')
         style = data.get('travel_style', 'Cultural')
