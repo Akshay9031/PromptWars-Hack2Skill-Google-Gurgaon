@@ -34,7 +34,8 @@ def generate_itinerary():
         # --- ROBUST VALIDATION (Edge Cases) ---
         dest = sanitize_input(data.get('destination'))
         if not dest or len(dest) < 2:
-            return {"error": "Invalid destination provided."}, 400
+            # Fallback for natural language only queries
+            dest = "Your Bespoke Destination"
 
         start_date = data.get('start_date')
         end_date = data.get('end_date')
@@ -44,13 +45,10 @@ def generate_itinerary():
             d2 = datetime.strptime(end_date, '%Y-%m-%d')
             if d2 < d1:
                 return {"error": "End date cannot be before start date."}, 400
-            if d1 < datetime.now().replace(hour=0, minute=0, second=0, microsecond=0):
-                # We'll allow past dates for planning, but flag it as a warning in prompt
-                is_past = True
-            else:
-                is_past = False
         except:
-            return {"error": "Invalid date format."}, 400
+            # Defaults for natural language only
+            start_date = datetime.now().strftime('%Y-%m-%d')
+            end_date = (datetime.now()).strftime('%Y-%m-%d')
 
         # --- DATA CLEANING ---
         origin = sanitize_input(data.get('home_country', 'New Delhi, India'))
@@ -60,73 +58,54 @@ def generate_itinerary():
         style = data.get('travel_style', 'Cultural')
         persona = data.get('persona', 'Family')
         description = sanitize_input(data.get('trip_description', ''))
-        interests = data.get('interests', 'General')
-        requests = data.get('special_requests', 'None')
 
         # Construct the Powerful Xplor AI Prompt
         prompt = f\"\"\"
         You are Xplor AI, the world's most advanced travel experience engine. 
-        Your mission is to craft a cinematic, high-density travel plan for a journey from {origin} to {dest}.
+        Your mission is to craft a cinematic, high-density travel plan.
 
         USER SPECIFICATIONS:
-        - Destination: {dest}
-        - Origin: {origin}
+        - Description of Trip: {description}
+        - Target Destination: {dest}
         - Travel Window: {start_date} to {end_date} ({days} days)
         - Group Size: {travelers} passengers
         - Budget Level: {budget}
         - Style: {style}
-        - Interests: {interests}
-        - Trip Persona: {persona}
-        - Core Request: {description}
+        - Persona: {persona}
 
-        PERSONA LOGIC:
-        - If Persona is 'Work': Focus on high-speed Wi-Fi, meeting spaces, proximity to business hubs, and efficient transport.
-        - If Persona is 'Family': Focus on safety, kids' activities, spacious stays, and family-friendly dining.
-        - If Persona is 'Friends': Focus on nightlife, group activities, social dining, and vibrant areas.
-        - If Persona is 'Solo': Focus on social hostels or boutique stays, safety, and immersive local experiences.
+        CORE REQUIREMENT: You MUST provide a complete, granular plan for EVERY SINGLE DAY. 
+        Generic summaries are NOT allowed.
 
-        STRUCTURE YOUR RESPONSE IN THESE EXACT SECTIONS WITH HEADINGS:
+        STRUCTURE YOUR RESPONSE IN THESE EXACT SECTIONS:
 
-        ## 🌍 The Overview
-        Vivid vibe check of {dest}. Include: weather advisory for {start_date} specifically, visa/passport requirements for a traveler from {origin}, and estimated travel time.
+        ## 🌍 The Mission Overview
+        Vivid summary of the trip to {dest}. Weather forecast and travel advisory for {start_date}.
 
-        ## 📅 The Daily Timeline
-        For the travel window of {start_date} to {end_date}, provide a day-by-day breakdown:
-        - **Timing-based Schedule**: (e.g., 09:00 AM - Activity)
-        - **Top Attractions**: Brief, punchy descriptions.
-        - **Estimated Costs**: Cost per activity in USD.
-        - **Transport**: How to get between spots.
-        - **Local Eats**: Breakfast, Lunch, and Dinner recommendations.
+        ## 📅 Day-by-Day Master Plan
+        For each day from {start_date} to {end_date}, you MUST include:
+        - **🏨 Accommodation**: Name a specific high-quality hotel/stay matching the {budget} budget.
+        - **🥣 Breakfast**: Specific dish and a highly-rated local spot.
+        - **🏛️ Morning Outing**: Detailed activity with timing.
+        - **🍱 Lunch**: Specific dish and a highly-rated local spot.
+        - **🌳 Afternoon Outing**: Detailed activity with timing.
+        - **🍷 Dinner**: Specific dish and a highly-rated local spot.
+        - **✨ Evening Experience**: A unique local recommendation.
 
-        ## 🏨 Stay Curations
-        Suggest 5 specific accommodation options in {dest} for {travelers} guests. 
-        Categorize by: **Budget / Mid-range / Luxury**.
-        For each: Hotel name, price per night, star rating, amenities, distance from center, Pros/Cons.
-
-        ## ✈️ Flight Intelligence
-        Rank 3 hypothetical flight options from {origin} to {dest}.
-        Rank by: **Cheapest, Fastest, and Best Value**.
-        Include: Airline, times, layovers, baggage policy, and estimated price. Flag red-eyes clearly.
+        ## ✈️ Flight Logistics
+        Top 3 flight options from {origin} to {dest} (Cheapest, Fastest, Best Value).
 
         ## 🍱 Local Guide Insights
-        - 5 Must-try local dishes and where to find them.
-        - 3 Hidden gems tourists miss.
-        - Top 3 local markets or shopping spots.
-        - Cultural Dos and Don'ts.
+        Must-try dishes, hidden gems, and cultural etiquette.
 
-        ## 💰 Budget Breakdown
-        Provide a daily spend allocation for: Accommodation, Food, Transport, Activities, and Emergency Fund.
-        Flag if the total budget is realistic for {dest}.
-
-        ## 🧳 Packing Essentials
-        Specific items based on the season and {style} style.
+        ## 💰 Financial Breakdown
+        Estimated daily spend vs total budget.
 
         ## 🤖 TripBot Assistant
-        Travel safety, local laws, and currency tips.
+        Safety tips and local laws.
         
         PRACTICAL TRAVEL TIP: (End with one unique, high-value tip).
 
-        TONE: Friendly, professional, elite, and conversational.
+        TONE: Elite, professional, and immersive. Use Markdown tables for flights and costs.
         \"\"\"
 
         def generate():
