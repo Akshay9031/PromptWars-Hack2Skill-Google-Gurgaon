@@ -123,9 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const description = tripDescription.value.trim();
     if (!description && !destinationInput.value) { alert("Please describe your trip!"); return; }
 
+    // Immediate UI feedback
     showResultsPage();
-    itineraryOutput.innerHTML = "";
-    liveStreamText.textContent = "";
+    itineraryOutput.innerHTML = `<div class=\"flex items-center justify-center p-20\"><div class=\"animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#E94560]\"></div></div>`;
+    liveStreamText.textContent = \"Orchestrating your experience...\";
     document.getElementById('live-stream-box').classList.remove('hidden');
     
     submitBtn.disabled = true;
@@ -137,10 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          destination: destinationInput.value || "Custom Trip",
+          destination: destinationInput.value || \"Bespoke Location\",
           home_country: document.getElementById('home_country').value,
-          start_date: document.getElementById('start_date').value || new Date().toISOString().split('T')[0],
-          end_date: document.getElementById('end_date').value || new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+          start_date: document.getElementById('start_date').value || \"\",
+          end_date: document.getElementById('end_date').value || \"\",
           group_type: document.getElementById('group_type').value,
           budget: document.getElementById('budget').value,
           trip_description: description,
@@ -148,26 +149,34 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
 
+      if (!response.ok) throw new Error(\"Server responded with an error\");
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = "";
 
+      itineraryOutput.innerHTML = ""; // Clear loader once stream starts
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value);
+        const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n\n');
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
-            if (data.chunk) {
-              accumulated += data.chunk;
-              liveStreamText.textContent = accumulated;
-              liveStreamText.scrollTop = liveStreamText.scrollHeight;
-            }
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.chunk) {
+                accumulated += data.chunk;
+                liveStreamText.textContent = accumulated;
+                liveStreamText.scrollTop = liveStreamText.scrollHeight;
+              }
+            } catch (e) { console.warn(\"Parsing chunk error\", e); }
           }
         }
       }
+
+      if (!accumulated) throw new Error(\"No content generated\");
 
       currentItineraryText = accumulated;
       document.getElementById('live-stream-box').classList.add('hidden');

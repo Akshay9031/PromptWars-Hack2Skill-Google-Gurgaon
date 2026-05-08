@@ -59,11 +59,12 @@ def generate_itinerary():
         # Construct the Powerful Xplor AI Prompt
         prompt = f\"\"\"
         You are Xplor AI, the world's most advanced travel experience engine. 
-        Your mission is to craft a cinematic, high-density travel plan.
 
+        CRITICAL MISSION: If the destination is provided as '{dest}', you MUST first analyze the 'Description of Trip' below to determine the intended destination.
+        
         USER SPECIFICATIONS:
         - Description of Trip: {description}
-        - Target Destination: {dest}
+        - Explicit Destination Provided: {dest}
         - Travel Window: {start_date} to {end_date} ({days} days)
         - Group Size: {travelers} passengers
         - Budget Level: {budget}
@@ -76,20 +77,20 @@ def generate_itinerary():
         STRUCTURE YOUR RESPONSE IN THESE EXACT SECTIONS:
 
         ## 🌍 The Mission Overview
-        Vivid summary of the trip to {dest}. Weather forecast and travel advisory for {start_date}.
+        Vivid summary of the trip. Clearly state the destination you identified. Weather forecast and travel advisory.
 
         ## 📅 Day-by-Day Master Plan
-        For each day from {start_date} to {end_date}, you MUST include:
-        - **🏨 Accommodation**: Name a specific high-quality hotel/stay matching the {budget} budget.
-        - **🥣 Breakfast**: Specific dish and a highly-rated local spot.
-        - **🏛️ Morning Outing**: Detailed activity with timing.
-        - **🍱 Lunch**: Specific dish and a highly-rated local spot.
-        - **🌳 Afternoon Outing**: Detailed activity with timing.
-        - **🍷 Dinner**: Specific dish and a highly-rated local spot.
+        For each day, you MUST include:
+        - **🏨 Accommodation**: Name a specific hotel matching the budget.
+        - **🥣 Breakfast**: Specific dish and local spot.
+        - **🏛️ Morning Outing**: Detailed activity.
+        - **🍱 Lunch**: Specific dish and local spot.
+        - **🌳 Afternoon Outing**: Detailed activity.
+        - **🍷 Dinner**: Specific dish and local spot.
         - **✨ Evening Experience**: A unique local recommendation.
 
         ## ✈️ Flight Logistics
-        Top 3 flight options from {origin} to {dest} (Cheapest, Fastest, Best Value).
+        Top 3 flight options (Cheapest, Fastest, Best Value).
 
         ## 🍱 Local Guide Insights
         Must-try dishes, hidden gems, and cultural etiquette.
